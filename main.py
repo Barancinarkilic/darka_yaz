@@ -1,17 +1,17 @@
 import json
 import datetime
 import streamlit as st
-import firebase_admin
-from firebase_admin import credentials, firestore
+from airtable import Airtable
 
-# ——— Load Firebase creds from kol.json ———
-with open("kol.json", "r", encoding="utf-8") as f:
-    firebase_creds = json.load(f)
+# ——— Load Airtable creds from JSON ———
+with open("secrets.json", "r", encoding="utf-8") as f:
+    creds = json.load(f)
 
-cred = credentials.Certificate(firebase_creds)
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
+API_KEY    = creds["airtable_api_key"]
+BASE_ID    = creds["airtable_base_id"]
+TABLE_NAME = creds.get("table_name", "Registrations")
+
+airtable = Airtable(BASE_ID, TABLE_NAME, API_KEY)
 
 # ——— Streamlit page setup ———
 st.set_page_config(page_title="Event Kayıt", layout="centered")
@@ -25,7 +25,7 @@ if 'misafir_durumu_onceki' not in st.session_state:
 
 # ——— Main form fields ———
 isim_soyisim = st.text_input("İsim Soyisim *")
-yas = st.number_input("Yaşınız *", min_value=1, max_value=120, step=1)
+yas          = st.number_input("Yaşınız *", min_value=1, max_value=120, step=1)
 
 st.write("Telefon Numarası *")
 col1, col2 = st.columns([0.2, 0.8])
@@ -36,11 +36,7 @@ with col2:
         "", max_chars=10, placeholder="5XX XXX XX XX", label_visibility="collapsed"
     )
 
-darka_uye = st.radio(
-    "Darka Spor Kulübü Üyesi misiniz? *",
-    ("Evet", "Hayır"),
-    horizontal=True
-)
+darka_uye      = st.radio("Darka Spor Kulübü Üyesi misiniz? *", ("Evet", "Hayır"), horizontal=True)
 misafir_var_mi = st.radio(
     "Misafir/Çocuklarınızla mı katılıyorsunuz? *",
     ("Evet", "Hayır"),
@@ -49,10 +45,7 @@ misafir_var_mi = st.radio(
 )
 
 # ——— Clear guest entries if switched back to “Hayır” ———
-if (
-    misafir_var_mi == "Hayır"
-    and st.session_state.misafir_durumu_onceki == "Evet"
-):
+if misafir_var_mi == "Hayır" and st.session_state.misafir_durumu_onceki == "Evet":
     for i in range(st.session_state.guest_count):
         for suffix in ("isim", "yas"):
             st.session_state.pop(f"guest_{i}_{suffix}", None)
@@ -82,10 +75,7 @@ if misafir_var_mi == "Evet":
     for i in range(st.session_state.guest_count):
         c1, c2 = st.columns([0.6, 0.4])
         with c1:
-            st.text_input(
-                f"Misafir {i+1} İsim Soyisim",
-                key=f"guest_{i}_isim"
-            )
+            st.text_input(f"Misafir {i+1} İsim Soyisim", key=f"guest_{i}_isim")
         with c2:
             st.number_input(
                 f"Misafir {i+1} Yaş",
@@ -106,31 +96,26 @@ if st.button("Kaydı Tamamla"):
     else:
         # build guest_list
         if misafir_var_mi == "Evet":
+            guest_list = []
             for i in range(st.session_state.guest_count):
                 name = st.session_state.get(f"guest_{i}_isim", "").strip()
-                age = st.session_state.get(f"guest_{i}_yas", 0)
+                age  = st.session_state.get(f"guest_{i}_yas", 0)
                 if name:
-                    guest_list.append({
-                        "isim": name.lower(),
-                        "yas": age
-                    })
+                    guest_list.append({"isim": name.lower(), "yas": age})
 
-        # payload
-        registration_data = {
-            "isim_soyisim":     isim_soyisim.lower(),
-            "yas":              yas,
-            "telefon_numarasi": f"{ulke_kodu}{telefon_numarasi}",
-            "darka_uyesi":      darka_uye.lower(),
-            "misafir_durumu":   misafir_var_mi.lower(),
-            "misafirler":       guest_list,
-            "submit_timestamp": datetime.datetime.utcnow().isoformat()
+        # prepare Airtable record
+        record = {
+            "isim_soyisim":    isim_soyisim,
+            "yas":             yas,
+            "telefon_numarasi":         f"{ulke_kodu}{telefon_numarasi}",
+            "darka_uyesi":     darka_uye,
+            "misafir_durumu":  misafir_var_mi,
+            "misafirler":      json.dumps(guest_list, ensure_ascii=False)
         }
 
-        # write to Firestore
+        # write to Airtable using `create` (not `insert`)
         try:
-            db.collection("event_participants").add(registration_data)
-            st.success("Kaydınız başarıyla tamamlandı!")
-            st.balloons()
-            st.json(registration_data)
+            airtable.insert(record)    # <— note `.insert`
+            st.success("Kaydınız başarıyla kaydedildi!")
         except Exception as e:
-            st.error(f"Veritabanına yazarken hata oluştu: {e}")
+            st.error(f"Airtable’a yazarken hata oluştu: {e}")
