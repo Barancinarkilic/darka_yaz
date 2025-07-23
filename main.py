@@ -15,31 +15,34 @@ airtable = Airtable(BASE_ID, TABLE_NAME, API_KEY)
 # ——— Streamlit page setup ———
 st.set_page_config(page_title="Event Kayıt", layout="wide")
 
-# ——— If query‑param “id” exists, show full‑screen confirmation ———
+# … after setting st.query_params["id"] and calling st.rerun(), at the top of the script …
 params = st.query_params
 if "id" in params:
     record_number = params["id"]
+
     st.markdown(
         f"""
         <style>
           .fullpage {{
-            height:100vh;
-            display:flex;
-            flex-direction:column;
-            justify-content:center;
-            align-items:center;
-            text-align:center;
-            background-color:#f9f9f9;
-            margin:0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;   /* ← space so both elements stay visible */
+            align-items: center;
+            text-align: center;
+            background-color: #f9f9f9;
+            padding: 1rem;                   /* ensure some breathing room */
+            overflow-y: auto;                /* allow scrolling if still too tall */
           }}
           .fullpage h2 {{
-            font-size:2rem;
-            margin-bottom:1.5rem;
+            font-size: 1.8rem;               /* slightly smaller to fit mobiles */
+            line-height: 1.3;
+            margin: 0;
           }}
           .fullpage h1 {{
-            font-size:6rem;
-            color:#d9534f;
-            margin:0;
+            font-size: 6rem;
+            color: #d9534f;
+            margin: 0;
           }}
         </style>
         <div class="fullpage">
