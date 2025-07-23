@@ -22,7 +22,7 @@ if "id" in params:
 
     st.markdown(f"""
     <style>
-      /* full‑screen fixed overlay */
+      /* Full-screen, fixed overlay using flex so text+number stay together */
       .stOverlay {{
         position: fixed !important;
         top: 0; left: 0;
@@ -34,21 +34,23 @@ if "id" in params:
         align-items: center;
         text-align: center;
         padding: 1rem;
+        overflow-y: auto;
         z-index: 9999;
       }}
       .stOverlay h2 {{
-        font-size: 1.8rem;
-        line-height: 1.3;
-        margin-bottom: 2rem;
+        color: #222 !important;           /* force a dark color */
+        font-size: 1.6rem !important;
+        line-height: 1.3 !important;
+        margin: 0 0 1rem 0 !important;
       }}
       .stOverlay h1 {{
-        font-size: 6rem;
-        color: #d9534f;
-        margin: 0;
+        color: #d9534f !important;
+        font-size: 5rem !important;
+        margin: 0 !important;
       }}
       @media (max-width: 480px) {{
-        .stOverlay h2 {{ font-size: 1.4rem; }}
-        .stOverlay h1 {{ font-size: 4rem; }}
+        .stOverlay h2 {{ font-size: 1.2rem !important; }}
+        .stOverlay h1 {{ font-size: 4rem !important; }}
       }}
     </style>
     <div class="stOverlay">
