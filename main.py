@@ -15,44 +15,52 @@ airtable = Airtable(BASE_ID, TABLE_NAME, API_KEY)
 # ——— Streamlit page setup ———
 st.set_page_config(page_title="Event Kayıt", layout="wide")
 
-# … after setting st.query_params["id"] and calling st.rerun(), at the top of the script …
+# ——— Confirmation overlay if “id” query‑param is present ———
 params = st.query_params
 if "id" in params:
     record_number = params["id"]
 
-    st.markdown(
-        f"""
-        <style>
-          .fullpage {{
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;   /* ← space so both elements stay visible */
-            align-items: center;
-            text-align: center;
-            background-color: #f9f9f9;
-            padding: 1rem;                   /* ensure some breathing room */
-            overflow-y: auto;                /* allow scrolling if still too tall */
-          }}
-          .fullpage h2 {{
-            font-size: 1.8rem;               /* slightly smaller to fit mobiles */
-            line-height: 1.3;
-            margin: 0;
-          }}
-          .fullpage h1 {{
-            font-size: 6rem;
-            color: #d9534f;
-            margin: 0;
-          }}
-        </style>
-        <div class="fullpage">
-          <h2>Bu numarayı aklınızda tutmanız veya ekran görüntüsünü almanız<br>
-             giriş esnasında bizi çok hızlandıracaktır.<br> Lütfen kaybetmeyiniz.</h2>
-          <h1>{record_number}</h1>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.markdown(f"""
+    <style>
+      /* full‑screen fixed overlay */
+      .stOverlay {{
+        position: fixed !important;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: #f9f9f9;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 1rem;
+        z-index: 9999;
+      }}
+      .stOverlay h2 {{
+        font-size: 1.8rem;
+        line-height: 1.3;
+        margin-bottom: 2rem;
+      }}
+      .stOverlay h1 {{
+        font-size: 6rem;
+        color: #d9534f;
+        margin: 0;
+      }}
+      @media (max-width: 480px) {{
+        .stOverlay h2 {{ font-size: 1.4rem; }}
+        .stOverlay h1 {{ font-size: 4rem; }}
+      }}
+    </style>
+    <div class="stOverlay">
+      <h2>
+        Bu numarayı aklınızda tutmanız veya ekran görüntüsünü almanız<br>
+        giriş esnasında bizi çok hızlandıracaktır.<br>
+        Lütfen kaybetmeyiniz.
+      </h2>
+      <h1>{record_number}</h1>
+    </div>
+    """, unsafe_allow_html=True)
+
     st.stop()
 
 # ——— Otherwise: show registration form ———
@@ -68,7 +76,7 @@ if 'misafir_durumu_onceki' not in st.session_state:
 isim_soyisim = st.text_input("İsim Soyisim *")
 yas          = st.number_input("Yaşınız *", min_value=1, max_value=120, step=1)
 
-# ——— Phone number section (30 % / 70 %) ———
+# ——— Phone number section (18 % / 82 %) ———
 st.markdown("### Telefon Numarası *")
 phone_cols = st.columns([0.18, 0.82])
 with phone_cols[0]:
@@ -161,14 +169,12 @@ if st.button("Kaydı Tamamla"):
         }
 
         try:
-            result     = airtable.insert(record)
-            auto_num   = result["fields"].get("id")
+            result   = airtable.insert(record)
+            auto_num = result["fields"].get("id")
             if auto_num is None:
-                st.error("Airtable'dan 'id' alanı alınamadı.")
+                st.error("Airtable’dan 'id' alanı alınamadı.")
             else:
-                # set the new query‑param and then stop this run
                 st.query_params["id"] = str(auto_num)
-                st.rerun()   # immediately queues a rerun with the updated URL params
-
+                st.rerun()
         except Exception as e:
             st.error(f"Airtable’a yazarken hata oluştu: {e}")
