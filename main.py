@@ -88,7 +88,7 @@ with phone_cols[1]:
 # ——— Club‑member & guest toggle ———
 darka_uye      = st.radio("Darka Spor Kulübü Üyesi misiniz? *", ("Evet", "Hayır"), horizontal=True)
 misafir_var_mi = st.radio(
-    "Misafir/Çocuklarınızla mı katılıyorsunuz? *",
+    "Misafir/Çocuklarınızla mı katılıyorsunuz? * (Form dolduracak misafir/çocuklarınızı girmeyiniz.)",
     ("Evet", "Hayır"),
     horizontal=True,
     index=1
