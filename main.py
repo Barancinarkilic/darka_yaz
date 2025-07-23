@@ -1,5 +1,4 @@
 import json
-import datetime
 import streamlit as st
 from airtable import Airtable
 
@@ -14,28 +13,79 @@ TABLE_NAME = creds.get("table_name", "Registrations")
 airtable = Airtable(BASE_ID, TABLE_NAME, API_KEY)
 
 # ——— Streamlit page setup ———
-st.set_page_config(page_title="Event Kayıt", layout="centered")
+st.set_page_config(page_title="Event Kayıt", layout="wide")
+
+# ——— If query‑param “id” exists, show full‑screen confirmation ———
+params = st.query_params
+if "id" in params:
+    record_number = params["id"]
+    st.markdown(
+        f"""
+        <style>
+          .fullpage {{
+            height:100vh;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+            text-align:center;
+            background-color:#f9f9f9;
+            margin:0;
+          }}
+          .fullpage h2 {{
+            font-size:2rem;
+            margin-bottom:1.5rem;
+          }}
+          .fullpage h1 {{
+            font-size:6rem;
+            color:#d9534f;
+            margin:0;
+          }}
+        </style>
+        <div class="fullpage">
+          <h2>Bu numarayı aklınızda tutmanız veya ekran görüntüsünü almanız<br>
+             giriş esnasında bizi çok hızlandıracaktır.<br> Lütfen kaybetmeyiniz.</h2>
+          <h1>{record_number}</h1>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    st.stop()
+
+# ——— Otherwise: show registration form ———
 st.title("Event Kayıt Formu")
 
-# ——— Session state for guests ———
+# ——— Session state init ———
 if 'guest_count' not in st.session_state:
     st.session_state.guest_count = 0
 if 'misafir_durumu_onceki' not in st.session_state:
     st.session_state.misafir_durumu_onceki = "Hayır"
 
-# ——— Main form fields ———
+# ——— Participant details ———
 isim_soyisim = st.text_input("İsim Soyisim *")
 yas          = st.number_input("Yaşınız *", min_value=1, max_value=120, step=1)
 
-st.write("Telefon Numarası *")
-col1, col2 = st.columns([0.2, 0.8])
-with col1:
-    ulke_kodu = st.text_input("Ülke Kodu", value="+90", label_visibility="collapsed")
-with col2:
+# ——— Phone number section (30 % / 70 %) ———
+st.markdown("### Telefon Numarası *")
+phone_cols = st.columns([0.18, 0.82])
+with phone_cols[0]:
+    ulke_kodu = st.text_input(
+        "Ülke Kodu",
+        value="+90",
+        max_chars=4,
+        help="Lütfen ülke kodunu (örn. +90) giriniz",
+        label_visibility="visible"
+    )
+with phone_cols[1]:
     telefon_numarasi = st.text_input(
-        "", max_chars=10, placeholder="5XX XXX XX XX", label_visibility="collapsed"
+        "Telefon Numarası",
+        max_chars=10,
+        placeholder="5XX XXX XX XX",
+        help="10 haneli telefon numarasını giriniz",
+        label_visibility="visible"
     )
 
+# ——— Club‑member & guest toggle ———
 darka_uye      = st.radio("Darka Spor Kulübü Üyesi misiniz? *", ("Evet", "Hayır"), horizontal=True)
 misafir_var_mi = st.radio(
     "Misafir/Çocuklarınızla mı katılıyorsunuz? *",
@@ -44,39 +94,33 @@ misafir_var_mi = st.radio(
     index=1
 )
 
-# ——— Clear guest entries if switched back to “Hayır” ———
+# clear guest entries if toggled off
 if misafir_var_mi == "Hayır" and st.session_state.misafir_durumu_onceki == "Evet":
     for i in range(st.session_state.guest_count):
         for suffix in ("isim", "yas"):
             st.session_state.pop(f"guest_{i}_{suffix}", None)
     st.session_state.guest_count = 0
-
 st.session_state.misafir_durumu_onceki = misafir_var_mi
 
-# ——— Guest section ———
-guest_list = []
+# ——— Guest details ———
 if misafir_var_mi == "Evet":
     st.subheader("Misafir/Çocuk Bilgileri")
-    btn_col1, btn_col2, _ = st.columns([0.15, 0.15, 0.7])
-    with btn_col1:
+    add_col, rem_col, _ = st.columns([0.15, 0.15, 0.7])
+    with add_col:
         if st.button("➕ Ekle", use_container_width=True):
             st.session_state.guest_count += 1
-    with btn_col2:
-        if st.button(
-            "➖ Sil",
-            use_container_width=True,
-            disabled=st.session_state.guest_count == 0
-        ):
+    with rem_col:
+        if st.button("➖ Sil", use_container_width=True, disabled=st.session_state.guest_count == 0):
             idx = st.session_state.guest_count - 1
             for suffix in ("isim", "yas"):
                 st.session_state.pop(f"guest_{idx}_{suffix}", None)
             st.session_state.guest_count = idx
 
     for i in range(st.session_state.guest_count):
-        c1, c2 = st.columns([0.6, 0.4])
-        with c1:
+        g1, g2 = st.columns([0.6, 0.4])
+        with g1:
             st.text_input(f"Misafir {i+1} İsim Soyisim", key=f"guest_{i}_isim")
-        with c2:
+        with g2:
             st.number_input(
                 f"Misafir {i+1} Yaş",
                 min_value=0,
@@ -85,7 +129,7 @@ if misafir_var_mi == "Evet":
                 key=f"guest_{i}_yas"
             )
 
-# ——— Submission ———
+# ——— Submit button ———
 st.markdown("---")
 if st.button("Kaydı Tamamla"):
     # validation
@@ -94,28 +138,32 @@ if st.button("Kaydı Tamamla"):
     elif len(telefon_numarasi) != 10 or not telefon_numarasi.isdigit():
         st.error("Lütfen geçerli bir telefon numarası girin.")
     else:
-        # build guest_list
+        # build guest list
+        guest_list = []
         if misafir_var_mi == "Evet":
-            guest_list = []
             for i in range(st.session_state.guest_count):
                 name = st.session_state.get(f"guest_{i}_isim", "").strip()
                 age  = st.session_state.get(f"guest_{i}_yas", 0)
                 if name:
                     guest_list.append({"isim": name.lower(), "yas": age})
 
-        # prepare Airtable record
+        # prepare record
         record = {
             "isim_soyisim":    isim_soyisim,
             "yas":             yas,
-            "telefon_numarasi":         f"{ulke_kodu}{telefon_numarasi}",
+            "telefon_numarasi": f"{ulke_kodu}{telefon_numarasi}",
             "darka_uyesi":     darka_uye,
             "misafir_durumu":  misafir_var_mi,
             "misafirler":      json.dumps(guest_list, ensure_ascii=False)
         }
 
-        # write to Airtable using `create` (not `insert`)
         try:
-            airtable.insert(record)    # <— note `.insert`
-            st.success("Kaydınız başarıyla kaydedildi!")
+            result     = airtable.insert(record)
+            auto_num   = result["fields"].get("id")
+            if auto_num is None:
+                st.error("Airtable'dan 'id' alanı alınamadı.")
+            else:
+                st.query_params["id"] = str(auto_num)
+                st.experimental_rerun()
         except Exception as e:
             st.error(f"Airtable’a yazarken hata oluştu: {e}")
