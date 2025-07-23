@@ -163,7 +163,9 @@ if st.button("Kaydı Tamamla"):
             if auto_num is None:
                 st.error("Airtable'dan 'id' alanı alınamadı.")
             else:
+                # set the new query‑param and then stop this run
                 st.query_params["id"] = str(auto_num)
-                st.experimental_rerun()
+                st.rerun()   # immediately queues a rerun with the updated URL params
+
         except Exception as e:
             st.error(f"Airtable’a yazarken hata oluştu: {e}")
