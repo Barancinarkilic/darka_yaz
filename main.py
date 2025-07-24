@@ -16,12 +16,10 @@ airtable = Airtable(BASE_ID, TABLE_NAME, API_KEY)
 st.set_page_config(page_title="Event Kayıt", layout="wide")
 
 # ——— Confirmation overlay if “id” query‑param is present ———
-params = st.experimental_get_query_params()
+params = st.query_params
 if "id" in params:
-    # Extract the first value (query_params gives a list)
-    record_number = params["id"][0]
+    record_number = params["id"]
 
-    # Inline styles only—no <style> tag or media queries
     overlay_html = f"""
     <div style="
         position: fixed !important;
@@ -75,15 +73,12 @@ st.subheader("Telefon Numarası *")
 phone_cols = st.columns([0.18, 0.82])
 with phone_cols[0]:
     ulke_kodu = st.text_input(
-        "Ülke Kodu",
-        value="+90",
-        max_chars=4,
+        "Ülke Kodu", value="+90", max_chars=4,
         help="Lütfen ülke kodunu (örn. +90) giriniz"
     )
 with phone_cols[1]:
     telefon_numarasi = st.text_input(
-        "Telefon Numarası",
-        max_chars=10,
+        "Telefon Numarası", max_chars=10,
         placeholder="5XX XXX XX XX",
         help="10 haneli telefon numarasını giriniz"
     )
@@ -92,9 +87,7 @@ with phone_cols[1]:
 darka_uye      = st.radio("Darka Spor Kulübü Üyesi misiniz? *", ("Evet", "Hayır"), horizontal=True)
 misafir_var_mi = st.radio(
     "Misafir/Çocuklarınızla mı katılıyorsunuz? * (Form dolduracak misafir/çocuklarınızı girmeyiniz.)",
-    ("Evet", "Hayır"),
-    horizontal=True,
-    index=1
+    ("Evet", "Hayır"), horizontal=True, index=1
 )
 
 # clear guest entries if toggled off
@@ -123,8 +116,7 @@ if misafir_var_mi == "Evet":
             st.text_input(f"Misafir {i+1} İsim Soyisim", key=f"guest_{i}_isim")
         with g2:
             st.number_input(
-                f"Misafir {i+1} Yaş",
-                min_value=0, max_value=120, step=1,
+                f"Misafir {i+1} Yaş", min_value=0, max_value=120, step=1,
                 key=f"guest_{i}_yas"
             )
 
@@ -162,7 +154,8 @@ if st.button("Kaydı Tamamla"):
             if auto_num is None:
                 st.error("Airtable’dan 'id' alanı alınamadı.")
             else:
-                st.experimental_set_query_params(id=str(auto_num))
+                # set the URL ?id=<auto_num> via the new API
+                st.query_params["id"] = str(auto_num)
                 st.rerun()
         except Exception as e:
             st.error(f"Airtable’a yazarken hata oluştu: {e}")
