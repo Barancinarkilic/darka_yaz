@@ -19,10 +19,8 @@ st.set_page_config(page_title="Event Kayıt", layout="wide")
 params = st.query_params
 if "id" in params:
     record_number = params["id"]
-
     st.markdown(f"""
     <style>
-      /* Full-screen, fixed overlay using flex so text+number stay together */
       .stOverlay {{
         position: fixed !important;
         top: 0; left: 0;
@@ -38,7 +36,7 @@ if "id" in params:
         z-index: 9999;
       }}
       .stOverlay h2 {{
-        color: #222 !important;           /* force a dark color */
+        color: #222 !important;
         font-size: 1.6rem !important;
         line-height: 1.3 !important;
         margin: 0 0 1rem 0 !important;
@@ -62,40 +60,35 @@ if "id" in params:
       <h1>{record_number}</h1>
     </div>
     """, unsafe_allow_html=True)
-
     st.stop()
 
-# ——— Otherwise: show registration form ———
+# ——— Otherwise: form page ———
 st.title("Event Kayıt Formu")
 
 # ——— Session state init ———
-if 'guest_count' not in st.session_state:
-    st.session_state.guest_count = 0
-if 'misafir_durumu_onceki' not in st.session_state:
-    st.session_state.misafir_durumu_onceki = "Hayır"
+st.session_state.setdefault('guest_count', 0)
+st.session_state.setdefault('misafir_durumu_onceki', "Hayır")
 
 # ——— Participant details ———
 isim_soyisim = st.text_input("İsim Soyisim *")
 yas          = st.number_input("Yaşınız *", min_value=1, max_value=120, step=1)
 
-# ——— Phone number section (18 % / 82 %) ———
-st.markdown("### Telefon Numarası *")
+# ——— Phone number section ———
+st.subheader("Telefon Numarası *")
 phone_cols = st.columns([0.18, 0.82])
 with phone_cols[0]:
     ulke_kodu = st.text_input(
         "Ülke Kodu",
         value="+90",
         max_chars=4,
-        help="Lütfen ülke kodunu (örn. +90) giriniz",
-        label_visibility="visible"
+        help="Lütfen ülke kodunu (örn. +90) giriniz"
     )
 with phone_cols[1]:
     telefon_numarasi = st.text_input(
         "Telefon Numarası",
         max_chars=10,
         placeholder="5XX XXX XX XX",
-        help="10 haneli telefon numarasını giriniz",
-        label_visibility="visible"
+        help="10 haneli telefon numarasını giriniz"
     )
 
 # ——— Club‑member & guest toggle ———
@@ -119,15 +112,13 @@ st.session_state.misafir_durumu_onceki = misafir_var_mi
 if misafir_var_mi == "Evet":
     st.subheader("Misafir/Çocuk Bilgileri")
     add_col, rem_col, _ = st.columns([0.15, 0.15, 0.7])
-    with add_col:
-        if st.button("➕ Ekle", use_container_width=True):
-            st.session_state.guest_count += 1
-    with rem_col:
-        if st.button("➖ Sil", use_container_width=True, disabled=st.session_state.guest_count == 0):
-            idx = st.session_state.guest_count - 1
-            for suffix in ("isim", "yas"):
-                st.session_state.pop(f"guest_{idx}_{suffix}", None)
-            st.session_state.guest_count = idx
+    if add_col.button("➕ Ekle", use_container_width=True):
+        st.session_state.guest_count += 1
+    if rem_col.button("➖ Sil", use_container_width=True, disabled=st.session_state.guest_count == 0):
+        idx = st.session_state.guest_count - 1
+        for suffix in ("isim", "yas"):
+            st.session_state.pop(f"guest_{idx}_{suffix}", None)
+        st.session_state.guest_count = idx
 
     for i in range(st.session_state.guest_count):
         g1, g2 = st.columns([0.6, 0.4])
@@ -136,14 +127,12 @@ if misafir_var_mi == "Evet":
         with g2:
             st.number_input(
                 f"Misafir {i+1} Yaş",
-                min_value=0,
-                max_value=120,
-                step=1,
+                min_value=0, max_value=120, step=1,
                 key=f"guest_{i}_yas"
             )
 
-# ——— Submit button ———
-st.markdown("---")
+# ——— Divider & Submit ———
+st.divider()
 if st.button("Kaydı Tamamla"):
     # validation
     if not isim_soyisim or not telefon_numarasi or not yas:
