@@ -16,16 +16,18 @@ airtable = Airtable(BASE_ID, TABLE_NAME, API_KEY)
 st.set_page_config(page_title="Event Kayıt", layout="wide")
 
 # ——— Confirmation overlay if “id” query‑param is present ———
-params = st.query_params
+params = st.experimental_get_query_params()
 if "id" in params:
-    record_number = params["id"]
-    st.markdown(f"""
-    <style>
-      .stOverlay {{
+    # Extract the first value (query_params gives a list)
+    record_number = params["id"][0]
+
+    # Inline styles only—no <style> tag or media queries
+    overlay_html = f"""
+    <div style="
         position: fixed !important;
         top: 0; left: 0;
         width: 100vw; height: 100vh;
-        background: #f9f9f9;
+        background: rgba(249,249,249,1);
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -34,32 +36,27 @@ if "id" in params:
         padding: 1rem;
         overflow-y: auto;
         z-index: 9999;
-      }}
-      .stOverlay h2 {{
-        color: #222 !important;
-        font-size: 1.6rem !important;
-        line-height: 1.3 !important;
-        margin: 0 0 1rem 0 !important;
-      }}
-      .stOverlay h1 {{
-        color: #d9534f !important;
-        font-size: 5rem !important;
-        margin: 0 !important;
-      }}
-      @media (max-width: 480px) {{
-        .stOverlay h2 {{ font-size: 1.2rem !important; }}
-        .stOverlay h1 {{ font-size: 4rem !important; }}
-      }}
-    </style>
-    <div class="stOverlay">
-      <h2>
+    ">
+      <h2 style="
+          color: #222 !important;
+          font-size: 1.6rem !important;
+          line-height: 1.3 !important;
+          margin: 0 0 1rem 0 !important;
+      ">
         Bu numarayı aklınızda tutmanız veya ekran görüntüsünü almanız<br>
         giriş esnasında bizi çok hızlandıracaktır.<br>
         Lütfen kaybetmeyiniz.
       </h2>
-      <h1>{record_number}</h1>
+      <h1 style="
+          color: #d9534f !important;
+          font-size: 5rem !important;
+          margin: 0 !important;
+      ">
+        {record_number}
+      </h1>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(overlay_html, unsafe_allow_html=True)
     st.stop()
 
 # ——— Otherwise: form page ———
@@ -151,12 +148,12 @@ if st.button("Kaydı Tamamla"):
 
         # prepare record
         record = {
-            "isim_soyisim":    isim_soyisim,
-            "yas":             yas,
+            "isim_soyisim":     isim_soyisim,
+            "yas":              yas,
             "telefon_numarasi": f"{ulke_kodu}{telefon_numarasi}",
-            "darka_uyesi":     darka_uye,
-            "misafir_durumu":  misafir_var_mi,
-            "misafirler":      json.dumps(guest_list, ensure_ascii=False)
+            "darka_uyesi":      darka_uye,
+            "misafir_durumu":   misafir_var_mi,
+            "misafirler":       json.dumps(guest_list, ensure_ascii=False)
         }
 
         try:
@@ -165,7 +162,7 @@ if st.button("Kaydı Tamamla"):
             if auto_num is None:
                 st.error("Airtable’dan 'id' alanı alınamadı.")
             else:
-                st.query_params["id"] = str(auto_num)
+                st.experimental_set_query_params(id=str(auto_num))
                 st.rerun()
         except Exception as e:
             st.error(f"Airtable’a yazarken hata oluştu: {e}")
