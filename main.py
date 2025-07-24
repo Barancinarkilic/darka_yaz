@@ -16,7 +16,7 @@ airtable = Airtable(BASE_ID, TABLE_NAME, API_KEY)
 st.set_page_config(page_title="Event Kayıt", layout="wide")
 
 # ——— Confirmation overlay if “id” query‑param is present ———
-params = st.experimental_get_query_params()
+params = st.query_params()
 if "id" in params:
     # Extract the first value (query_params gives a list)
     record_number = params["id"][0]
