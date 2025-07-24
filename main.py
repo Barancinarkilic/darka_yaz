@@ -101,7 +101,7 @@ with phone_cols[1]:
 # ——— Club‑member & guest toggle ———
 darka_uye      = st.radio("Darka Spor Kulübü Üyesi misiniz? *", ("Evet", "Hayır"), horizontal=True)
 misafir_var_mi = st.radio(
-    "Çocuklarınızla mı katılıyorsunuz? * (Form dolduracak çocuklarınızı girmeyiniz.)",
+    "Eş/Çocuklarınızla mı katılıyorsunuz? * (Form dolduracak eş/çocuklarınızı girmeyiniz.)",
     ("Evet", "Hayır"),
     horizontal=True,
     index=1
@@ -117,7 +117,7 @@ st.session_state.misafir_durumu_onceki = misafir_var_mi
 
 # ——— Guest details ———
 if misafir_var_mi == "Evet":
-    st.subheader("Çocuk Bilgileri")
+    st.subheader("Eş/Çocuk Bilgileri")
     add_col, rem_col, _ = st.columns([0.15, 0.15, 0.7])
     with add_col:
         if st.button("➕ Ekle", use_container_width=True):
@@ -132,10 +132,10 @@ if misafir_var_mi == "Evet":
     for i in range(st.session_state.guest_count):
         g1, g2 = st.columns([0.6, 0.4])
         with g1:
-            st.text_input(f"Çocuk {i+1} İsim Soyisim", key=f"guest_{i}_isim")
+            st.text_input(f"Eş/Çocuk {i+1} İsim Soyisim", key=f"guest_{i}_isim")
         with g2:
             st.number_input(
-                f"Çocuk {i+1} Yaş",
+                f"Eş/Çocuk {i+1} Yaş",
                 min_value=0,
                 max_value=120,
                 step=1,
